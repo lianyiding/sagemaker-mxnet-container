@@ -31,6 +31,8 @@ logging.getLogger('connectionpool.py').setLevel(logging.INFO)
 
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 
+NO_C4_REGIONS = {'eu-west-3', 'eu-north-1', 'ap-east-1'}
+
 
 def pytest_addoption(parser):
     parser.addoption('--docker-base-name', default='preprod-mxnet')
@@ -87,9 +89,12 @@ def tag(request, framework_version, processor, py_version):
 
 
 @pytest.fixture(scope='session')
-def instance_type(request, processor):
+def instance_type(request, processor, region):
     provided_instance_type = request.config.getoption('--instance-type')
-    default_instance_type = 'ml.c4.xlarge' if processor == 'cpu' else 'ml.p2.xlarge'
+    if processor == 'cpu':
+        default_instance_type = 'ml.c5.xlarge' in NO_C4_REGIONS else 'ml.c4.xlarge'
+    else:
+        default_instance_type = 'ml.p2.xlarge'
     return provided_instance_type if provided_instance_type is not None else default_instance_type
 
 
